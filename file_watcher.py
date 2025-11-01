@@ -124,8 +124,12 @@ class FileWatcher:
         for root, dirs, files in os.walk(dir):
             for file in files:
                 if file == 'Models.db3':
-                    changed_data_path = os.path.join(root, file)
-                    comment = self.get_comment(changed_data_path)
+                    db_path = os.path.join(root, file)
+                    logger.info(f"Найден Models.db3: {db_path}")
+                    comment = self.get_comment(db_path)
+                    if comment:
+                        return comment
+        logger.warning(f"Models.db3 не найден в {dir}")
         return comment or ''
 
     async def check_folder_updates(self, session):
