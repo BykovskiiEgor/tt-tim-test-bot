@@ -119,6 +119,7 @@ class FileWatcher:
                 conn.close()
 
     def find_db_file(self, dir: str):
+        comment = None
         for root, dirs, files in os.walk(dir):
             for file in files:
                 if file == 'Models.db3':
