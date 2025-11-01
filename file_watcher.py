@@ -113,7 +113,7 @@ class FileWatcher:
                 return rows
 
         except sqlite3.Error as e:
-            print(f"SQLite error: {e}")
+            logger.error(f"SQLite error: {e}")
 
         finally:
             if conn:
@@ -130,7 +130,7 @@ class FileWatcher:
                     if comment:
                         return comment
         logger.warning(f"Models.db3 не найден в {dir}")
-        return comment or ''
+        return "неизвестно", "нет комментария"
 
     async def check_folder_updates(self, session):
         """
