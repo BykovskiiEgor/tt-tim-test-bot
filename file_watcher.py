@@ -109,7 +109,8 @@ class FileWatcher:
 
             cursor.execute("SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1")
             rows = cursor.fetchone()
-            print(rows)
+            if rows:
+                return rows
 
         except sqlite3.Error as e:
             print(f"SQLite error: {e}")
