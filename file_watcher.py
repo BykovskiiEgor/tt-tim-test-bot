@@ -47,6 +47,37 @@ class FileWatcher:
         except Exception as e:
             logger.warning(f"Ошибка при сканировании {folder_path}: {e}")
         return latest
+    
+    def get_comment(self, db: str):
+        try:
+            conn = sqlite3.connect(db)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1")
+            rows = cursor.fetchone()
+            if rows:
+                return rows
+
+        except sqlite3.Error as e:
+            logger.error(f"SQLite error: {e}")
+
+        finally:
+            if conn:
+                conn.close()
+
+    def find_db_file(self, dir: str):
+        comment = None
+        for root, dirs, files in os.walk(dir):
+            for file in files:
+                if file == 'Models.db3':
+                    db_path = os.path.join(root, file)
+                    logger.info(f"Найден Models.db3: {db_path}")
+                    comment = self.get_comment(db_path)
+                    if comment:
+                        return comment
+        logger.warning(f"Models.db3 не найден в {dir}")
+        return "неизвестно", "нет комментария"
+
 
     async def notify_subscribers(self, sub: FolderSubscription, changed_data_path: str, current_mtime: datetime):
         """
@@ -102,35 +133,6 @@ class FileWatcher:
         except Exception as e:
             logger.error(f"Ошибка при отправке уведомления: {e}")
 
-    def get_comment(self, db: str):
-        try:
-            conn = sqlite3.connect(db)
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1")
-            rows = cursor.fetchone()
-            if rows:
-                return rows
-
-        except sqlite3.Error as e:
-            logger.error(f"SQLite error: {e}")
-
-        finally:
-            if conn:
-                conn.close()
-
-    def find_db_file(self, dir: str):
-        comment = None
-        for root, dirs, files in os.walk(dir):
-            for file in files:
-                if file == 'Models.db3':
-                    db_path = os.path.join(root, file)
-                    logger.info(f"Найден Models.db3: {db_path}")
-                    comment = self.get_comment(db_path)
-                    if comment:
-                        return comment
-        logger.warning(f"Models.db3 не найден в {dir}")
-        return "неизвестно", "нет комментария"
 
     async def check_folder_updates(self, session):
         """
