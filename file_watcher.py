@@ -128,7 +128,7 @@ class FileWatcher:
             
             if comment_result and len(comment_result) >= 2:
                 version_number, comment_text = comment_result[0], comment_result[1]
-                version_info = f"📝 Номер версии {version_number} Комментарий {comment_text}"
+                version_info = f"📝 Комментарий {comment_text}"
             else:
                 version_info = "📝 Информация о версии недоступна"
                 logger.error("Комментарий не получен или имеет неверный формат")
