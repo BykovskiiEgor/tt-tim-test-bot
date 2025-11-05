@@ -50,7 +50,6 @@ async def users_list_handler(message: Message):
             
             response += f"👤 <b>Пользователь:</b> @{user.username or 'без username'}\n"
             response += f"🆔 ID: {user.id} | TG ID: {user.tg_id}\n"
-            response += f"📑 Имя {user.first_name or 'без имени'}\n"
             
             if user.first_name or user.last_name:
                 name_parts = []
