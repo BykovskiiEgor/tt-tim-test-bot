@@ -7,4 +7,4 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./bot.db")
 FILES_ROOT = os.getenv("FILES_ROOT", "./files")
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "60"))
-ADMIN_ID = int(os.getenv("ADMIN_ID"))  
+ADMIN_IDS = ADMIN_IDS = [int(id.strip()) for id in os.getenv("ADMIN_IDS").split(",")]
