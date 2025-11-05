@@ -111,7 +111,6 @@ class FileWatcher:
                 except Exception as e:
                     logger.warning(f"Не удалось обновить данные пользователя {user.tg_id}: {e}")
 
-
             # Папка "Задание", на которую подписан пользователь (относительно FILES_ROOT)
             task_relative = sub.folder_path                          # например: "355/РД/Задание от КЖ"
             task_name = os.path.basename(task_relative)              # например: "Задание от КЖ"
@@ -123,16 +122,22 @@ class FileWatcher:
             # Время для отображения (со сдвигом), в БД/логах остаётся исходное
             display_time = current_mtime + timedelta(minutes=DISPLAY_TIME_OFFSET_MINUTES)
 
-            comment = await self.find_db_file(changed_data_path)
-            if not comment:
-                logger.error("Комментарий не получен")
+            comment_result = await self.find_db_file(changed_data_path)
+            version_info = ""
+            
+            if comment_result and len(comment_result) >= 2:
+                version_number, comment_text = comment_result[0], comment_result[1]
+                version_info = f"📝 Номер версии {version_number} Комментарий {comment_text}"
+            else:
+                version_info = "📝 Информация о версии недоступна"
+                logger.error("Комментарий не получен или имеет неверный формат")
 
             message = (
                 "🔄 <b>Обнаружено изменение в подписанной папке!</b>\n\n"
                 f"📂 Подписка: <b>{task_name}</b>\n"
                 f"📌 Путь: <code>{rvt_path}</code>\n"
                 f"🕒 Время изменения: {display_time.strftime('%d.%m.%Y %H:%M')}\n"
-                f"📝 Номер версии {comment[0]} Комментарий {comment[1]}"
+                f"{version_info}\n"
                 f"💬 Вы подписаны на это задание."
             )
 
