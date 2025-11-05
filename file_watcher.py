@@ -69,7 +69,6 @@ class FileWatcher:
         return None
 
     async def find_db_file(self, dir: str):
-        comment = None
         try:
             for root, dirs, files in os.walk(dir):
                 for file in files:
@@ -78,8 +77,10 @@ class FileWatcher:
                         logger.info(f"Найден Models.db3: {db_path}")
                         
                         comment = await self.get_comment(db_path)
-                        if comment:
-                            return comment
+                        if comment and len(comment) >= 2:
+                            return comment  
+                        else:
+                            return "неизвестно", "нет комментария"
                             
                 await asyncio.sleep(0)
                         
