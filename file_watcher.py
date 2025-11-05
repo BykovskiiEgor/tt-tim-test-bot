@@ -72,7 +72,7 @@ class FileWatcher:
         try:
             for root, dirs, files in os.walk(dir):
                 for file in files:
-                    if file == 'Models.db3':
+                    if file == 'Model.db3':
                         db_path = os.path.join(root, file)
                         logger.info(f"Найден Models.db3: {db_path}")
                         
