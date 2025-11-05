@@ -1,6 +1,6 @@
 import asyncio
 import os
-import sqlite3
+import aiosqlite
 from sqlalchemy import select
 from models import FolderSubscription, User, async_session
 from aiogram import Bot
@@ -48,33 +48,44 @@ class FileWatcher:
             logger.warning(f"Ошибка при сканировании {folder_path}: {e}")
         return latest
     
-    def get_comment(self, db: str):
+    async def get_comment(self, db: str):
         try:
-            conn = sqlite3.connect(db)
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1")
-            rows = cursor.fetchone()
-            if rows:
-                return rows
-
-        except sqlite3.Error as e:
+            async with aiosqlite.connect(db) as conn:
+                cursor = await conn.cursor()
+                
+                await cursor.execute(
+                    "SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1"
+                )
+                rows = await cursor.fetchone()
+                
+                if rows:
+                    return rows
+                    
+        except aiosqlite.Error as e:
             logger.error(f"SQLite error: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in get_comment: {e}")
+        
+        return None
 
-        finally:
-            if conn:
-                conn.close()
-
-    def find_db_file(self, dir: str):
+    async def find_db_file(self, dir: str):
         comment = None
-        for root, dirs, files in os.walk(dir):
-            for file in files:
-                if file == 'Models.db3':
-                    db_path = os.path.join(root, file)
-                    logger.info(f"Найден Models.db3: {db_path}")
-                    comment = self.get_comment(db_path)
-                    if comment:
-                        return comment
+        try:
+            for root, dirs, files in os.walk(dir):
+                for file in files:
+                    if file == 'Models.db3':
+                        db_path = os.path.join(root, file)
+                        logger.info(f"Найден Models.db3: {db_path}")
+                        
+                        comment = await self.get_comment(db_path)
+                        if comment:
+                            return comment
+                            
+                await asyncio.sleep(0)
+                        
+        except Exception as e:
+            logger.error(f"Error in find_db_file: {e}")
+        
         logger.warning(f"Models.db3 не найден в {dir}")
         return "неизвестно", "нет комментария"
 
@@ -112,7 +123,7 @@ class FileWatcher:
             # Время для отображения (со сдвигом), в БД/логах остаётся исходное
             display_time = current_mtime + timedelta(minutes=DISPLAY_TIME_OFFSET_MINUTES)
 
-            comment = self.find_db_file(changed_data_path)
+            comment = await self.find_db_file(changed_data_path)
 
             message = (
                 "🔄 <b>Обнаружено изменение в подписанной папке!</b>\n\n"
