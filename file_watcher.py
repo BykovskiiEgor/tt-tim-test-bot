@@ -124,13 +124,13 @@ class FileWatcher:
             display_time = current_mtime + timedelta(minutes=DISPLAY_TIME_OFFSET_MINUTES)
 
             comment_result = await self.find_db_file(changed_data_path)
-            version_info = ""
+            comment_line = ""
             
             if comment_result and len(comment_result) >= 2:
-                version_number, comment_text = comment_result[0], comment_result[1]
-                version_info = f"📝 Комментарий {comment_text}"
+                comment_text = comment_result[1]
+                if comment_text and comment_text.strip() and comment_text != "нет комментария":
+                    comment_line = f"📝 Комментарий: {comment_text}\n"
             else:
-                version_info = "📝 Информация о версии недоступна"
                 logger.error("Комментарий не получен или имеет неверный формат")
 
             message = (
@@ -138,8 +138,7 @@ class FileWatcher:
                 f"📂 Подписка: <b>{task_name}</b>\n"
                 f"📌 Путь: <code>{rvt_path}</code>\n"
                 f"🕒 Время изменения: {display_time.strftime('%d.%m.%Y %H:%M')}\n"
-                f"{version_info}\n"
-                f"💬 Вы подписаны на это задание."
+                f"{comment_line}\n"
             )
 
             await self.bot.send_message(
