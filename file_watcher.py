@@ -124,6 +124,8 @@ class FileWatcher:
             display_time = current_mtime + timedelta(minutes=DISPLAY_TIME_OFFSET_MINUTES)
 
             comment = await self.find_db_file(changed_data_path)
+            if not comment:
+                logger.error("Комментарий не получен")
 
             message = (
                 "🔄 <b>Обнаружено изменение в подписанной папке!</b>\n\n"
