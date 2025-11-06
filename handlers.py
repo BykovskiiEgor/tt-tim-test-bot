@@ -5,7 +5,7 @@ from datetime import datetime
 
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 
@@ -123,6 +123,28 @@ async def page_prev(callback: CallbackQuery, state: FSMContext):
     await show_projects_page(callback, state)
     await callback.answer()
 
+def show_stages(project):
+    stages_path = os.path.join(FILES_ROOT, project)
+    stages = sorted([
+        d for d in os.listdir(stages_path)
+        if os.path.isdir(os.path.join(stages_path, d)) and d.lower() != "bim"
+    ])
+
+    return stages
+
+async def show_button_stages(stages, callback: CallbackQuery, state: FSMContext):
+    kb = InlineKeyboardBuilder()
+    hash_map = {}
+    for st in stages:
+        h = make_callback_hash(st)
+        hash_map[h] = st
+        kb.button(text=st, callback_data=f"stage:{h}")
+    kb.button(text="⬅️ Назад", callback_data="proj_back")
+    kb.adjust(2)
+    await state.update_data(hash_map_stages=hash_map)
+    await callback.message.edit_text("Выберите стадию:", reply_markup=kb.as_markup())
+    await callback.answer()
+
 @router.callback_query(F.data.startswith("proj:"))
 async def project_selected(callback: CallbackQuery, state: FSMContext):
     h = callback.data.split("proj:")[1]
@@ -133,26 +155,18 @@ async def project_selected(callback: CallbackQuery, state: FSMContext):
         return
 
     await state.update_data(selected_project=project)
-    stages_path = os.path.join(FILES_ROOT, project)
-    stages = sorted([
-        d for d in os.listdir(stages_path)
-        if os.path.isdir(os.path.join(stages_path, d)) and d.lower() != "bim"
-    ])
-
+    stages = show_stages(project)
     if not stages:
         await callback.message.edit_text("❌ Нет доступных стадий для проекта.")
         await callback.answer()
         return
+    
+    await show_button_stages(stages, callback, state)
 
-    kb = InlineKeyboardBuilder()
-    hash_map = {}
-    for st in stages:
-        h = make_callback_hash(st)
-        hash_map[h] = st
-        kb.button(text=st, callback_data=f"stage:{h}")
-    kb.adjust(2)
-    await state.update_data(hash_map_stages=hash_map)
-    await callback.message.edit_text("Выберите стадию:", reply_markup=kb.as_markup())
+
+@router.callback_query(F.data == "proj_back")
+async def project_back(callback: CallbackQuery, state: FSMContext):
+    await show_projects_page(callback, state)
     await callback.answer()
 
 # ---------------- Stage and Task Selection ----------------
@@ -181,9 +195,27 @@ async def stage_selected(callback: CallbackQuery, state: FSMContext):
         hash_map[h] = t
         kb.button(text=t, callback_data=f"task:{h}")
     kb.adjust(2)
+    kb.row(InlineKeyboardButton(text="⬅️ Назад", callback_data="stage_back"))
     await state.update_data(hash_map_tasks=hash_map)
     await callback.message.edit_text("Выберите задание:", reply_markup=kb.as_markup())
     await callback.answer()
+
+@router.callback_query(F.data == "stage_back")
+async def stage_back(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    project = data.get("selected_project")
+    
+    if not project:
+        await callback.answer("❌ Проект не найден.", show_alert=True)
+        return
+    
+    stages = show_stages(project)
+    if not stages:
+        await callback.message.edit_text("❌ Нет доступных стадий для проекта.")
+        await callback.answer()
+        return
+
+    await show_button_stages(stages, callback, state)
 
 @router.callback_query(F.data.startswith("task:"))
 async def task_selected(callback: CallbackQuery, state: FSMContext):
