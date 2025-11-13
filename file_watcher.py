@@ -131,8 +131,8 @@ class FileWatcher:
                 comment_text = comment_result[1]
                 user_text = comment_result[2]
                 if comment_text and comment_text.strip() and comment_text != "нет комментария" and user_text:
-                    comment_line = f"📝 Комментарий: {comment_text}\n"
-                    user_line = f"👤 Автор комментария - {user_text}\n"
+                    comment_line = f"📝 Комментарий: {comment_text}"
+                    user_line = f"👤 Автор - {user_text}\n"
             else:
                 logger.error("Комментарий не получен или имеет неверный формат")
 
