@@ -130,9 +130,8 @@ class FileWatcher:
             if comment_result and len(comment_result) >= 2:
                 comment_text = comment_result[1]
                 user_text = comment_result[2]
-                if comment_text and comment_text.strip() and comment_text != "нет комментария" and user_text:
+                if comment_text and comment_text.strip() and comment_text != "нет комментария":
                     comment_line = f"📝 Комментарий: {comment_text}"
-                    user_line = f"👤 Автор - {user_text}\n"
             else:
                 logger.error("Комментарий не получен или имеет неверный формат")
 
@@ -142,7 +141,7 @@ class FileWatcher:
                 f"📌 Путь: <code>{rvt_path}</code>\n"
                 f"🕒 Время изменения: {display_time.strftime('%d.%m.%Y %H:%M')}\n"
                 f"{comment_line}\n"
-                f"{user_line}\n"
+                f"👤 Автор - {user_text}\n"
             )
 
             await self.bot.send_message(
