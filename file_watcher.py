@@ -48,13 +48,13 @@ class FileWatcher:
             logger.warning(f"Ошибка при сканировании {folder_path}: {e}")
         return latest
     
-    async def get_comment(self, db: str):
+    async def get_comment_and_user(self, db: str):
         try:
             async with aiosqlite.connect(db) as conn:
                 cursor = await conn.cursor()
                 
                 await cursor.execute(
-                    "SELECT VersionNumber, Comment FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1"
+                    "SELECT VersionNumber, Comment, UserName FROM ModelHistory ORDER BY VersionNumber DESC LIMIT 1"
                 )
                 rows = await cursor.fetchone()
                 
@@ -76,7 +76,7 @@ class FileWatcher:
                         db_path = os.path.join(root, file)
                         logger.info(f"Найден Models.db3: {db_path}")
                         
-                        comment = await self.get_comment(db_path)
+                        comment = await self.get_comment_and_user(db_path)
                         if comment and len(comment) >= 2:
                             return comment  
                         else:
@@ -125,11 +125,14 @@ class FileWatcher:
 
             comment_result = await self.find_db_file(changed_data_path)
             comment_line = ""
+            user_line = ""
             
             if comment_result and len(comment_result) >= 2:
                 comment_text = comment_result[1]
-                if comment_text and comment_text.strip() and comment_text != "нет комментария":
+                user_text = comment_result[2]
+                if comment_text and comment_text.strip() and comment_text != "нет комментария" and user_text:
                     comment_line = f"📝 Комментарий: {comment_text}\n"
+                    user_line = f"👤 Автор комментария - {user_text}\n"
             else:
                 logger.error("Комментарий не получен или имеет неверный формат")
 
@@ -139,6 +142,7 @@ class FileWatcher:
                 f"📌 Путь: <code>{rvt_path}</code>\n"
                 f"🕒 Время изменения: {display_time.strftime('%d.%m.%Y %H:%M')}\n"
                 f"{comment_line}\n"
+                f"{user_line}\n"
             )
 
             await self.bot.send_message(
